@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>コメント一覧</title>
+  <script src="http://unpkg.com/vue/dist/vue.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <ul>
+      <li v-for="comment in comments">
+        <div>{{ comment.text }} by {{ comment.name }}</div>
+      </li>
+    </ul>
+    <input v-model="name" placeholder="お名前">
+    <input v-model="text" placeholder="コメント">
+    <button v-on:click="add">登録</button>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
