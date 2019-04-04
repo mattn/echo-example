@@ -19,11 +19,15 @@ import (
 	"gopkg.in/gorp.v2"
 )
 
+var dbDriver = "postgres"
+
+// Validator is implementation of validation of rquest values.
 type Validator struct {
 	trans     ut.Translator
 	validator *validator.Validate
 }
 
+// Validate do validation for request value.
 func (v *Validator) Validate(i interface{}) error {
 	err := v.validator.Struct(i)
 	if err == nil {
@@ -40,10 +44,12 @@ func (v *Validator) Validate(i interface{}) error {
 	return errors.New(msg)
 }
 
+// Error indicate response erorr
 type Error struct {
 	Error string `json:"error"`
 }
 
+// Comment is a struct to hold unit of request and response.
 type Comment struct {
 	Id      int64     `json:"id" db:"id,primarykey,autoincrement"`
 	Name    string    `json:"name" form:"name" db:"name,notnull,default:'名無し',size:200"`
@@ -52,24 +58,30 @@ type Comment struct {
 	Updated time.Time `json:"updated" db:"updated,notnull"`
 }
 
+// PreInsert update fields Created and Updated.
 func (c *Comment) PreInsert(s gorp.SqlExecutor) error {
 	c.Created = time.Now()
 	c.Updated = c.Created
 	return nil
 }
 
+// PreInsert update field Updated.
 func (c *Comment) PreUpdate(s gorp.SqlExecutor) error {
 	c.Updated = time.Now()
 	return nil
 }
 
 func setupDB() (*gorp.DbMap, error) {
-	db, err := sql.Open("postgres", os.Getenv("DSN"))
+	db, err := sql.Open(dbDriver, os.Getenv("DSN"))
 	if err != nil {
 		return nil, err
 	}
 
-	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
+	var diarect gorp.Dialect = gorp.PostgresDialect{}
+	if dbDriver == "sqlite3" {
+		diarect = gorp.SqliteDialect{}
+	}
+	dbmap := &gorp.DbMap{Db: db, Dialect: diarect}
 	dbmap.AddTableWithName(Comment{}, "comments").SetKeys(true, "id")
 	err = dbmap.CreateTablesIfNotExists()
 	if err != nil {
@@ -108,10 +120,12 @@ func setupEcho() *echo.Echo {
 	return e
 }
 
+// Controller is a controller for this application.
 type Controller struct {
 	dbmap *gorp.DbMap
 }
 
+// InsertComment is GET handler to return record.
 func (controller *Controller) GetComment(c echo.Context) error {
 	var comment Comment
 	err := controller.dbmap.SelectOne(&comment,
@@ -126,6 +140,7 @@ func (controller *Controller) GetComment(c echo.Context) error {
 	return c.JSON(http.StatusOK, comment)
 }
 
+// InsertComment is GET handler to return records.
 func (controller *Controller) ListComments(c echo.Context) error {
 	var comments []Comment
 	_, err := controller.dbmap.Select(&comments,
@@ -138,6 +153,7 @@ func (controller *Controller) ListComments(c echo.Context) error {
 	return c.JSON(http.StatusOK, comments)
 }
 
+// InsertComment is POST handler to insert record.
 func (controller *Controller) InsertComment(c echo.Context) error {
 	var comment Comment
 	if err := c.Bind(&comment); err != nil {
