@@ -78,6 +78,8 @@ func setupDB() (*gorp.DbMap, error) {
 	}
 
 	var diarect gorp.Dialect = gorp.PostgresDialect{}
+
+	// for testing
 	if dbDriver == "sqlite3" {
 		diarect = gorp.SqliteDialect{}
 	}
@@ -95,6 +97,7 @@ func setupEcho() *echo.Echo {
 	e.Debug = true
 	e.Logger.SetOutput(os.Stderr)
 
+	// setup japanese translation
 	japanese := ja_JP.New()
 	uni := ut.New(japanese, japanese)
 	trans, _ := uni.GetTranslator("ja")
@@ -103,6 +106,8 @@ func setupEcho() *echo.Echo {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// register japanese translation for input field
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
 		switch name {
@@ -128,6 +133,7 @@ type Controller struct {
 // InsertComment is GET handler to return record.
 func (controller *Controller) GetComment(c echo.Context) error {
 	var comment Comment
+	// fetch record specified by parameter id
 	err := controller.dbmap.SelectOne(&comment,
 		"SELECT * FROM comments WHERE id = $1", c.Param("id"))
 	if err != nil {
@@ -143,27 +149,30 @@ func (controller *Controller) GetComment(c echo.Context) error {
 // InsertComment is GET handler to return records.
 func (controller *Controller) ListComments(c echo.Context) error {
 	var comments []Comment
+	// fetch last 10 records
 	_, err := controller.dbmap.Select(&comments,
 		"SELECT * FROM comments ORDER BY created desc LIMIT 10")
 	if err != nil {
 		c.Logger().Error("Select: ", err)
 		return c.String(http.StatusBadRequest, "Select: "+err.Error())
 	}
-	c.MultipartForm()
 	return c.JSON(http.StatusOK, comments)
 }
 
 // InsertComment is POST handler to insert record.
 func (controller *Controller) InsertComment(c echo.Context) error {
 	var comment Comment
+	// bind request to comment struct
 	if err := c.Bind(&comment); err != nil {
 		c.Logger().Error("Bind: ", err)
 		return c.String(http.StatusBadRequest, "Bind: "+err.Error())
 	}
+	// validate request
 	if err := c.Validate(&comment); err != nil {
 		c.Logger().Error("Validate: ", err)
 		return c.JSON(http.StatusBadRequest, &Error{Error: err.Error()})
 	}
+	// insert record
 	if err := controller.dbmap.Insert(&comment); err != nil {
 		c.Logger().Error("Insert: ", err)
 		return c.String(http.StatusBadRequest, "Insert: "+err.Error())
