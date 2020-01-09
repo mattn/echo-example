@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-playground/locales/ja_JP"
-	"github.com/go-playground/universal-translator"
+	ut "github.com/go-playground/universal-translator"
 	"github.com/labstack/echo"
 	_ "github.com/lib/pq"
 	"gopkg.in/go-playground/validator.v9"
@@ -52,7 +52,7 @@ type Error struct {
 // Comment is a struct to hold unit of request and response.
 type Comment struct {
 	Id      int64     `json:"id" db:"id,primarykey,autoincrement"`
-	Name    string    `json:"name" form:"name" db:"name,notnull,default:'名無し',size:200"`
+	Name    string    `json:"name" form:"name" db:"name,notnull,size:200"`
 	Text    string    `json:"text" form:"text" validate:"required,max=20" db:"text,notnull,size:399"`
 	Created time.Time `json:"created" db:"created,notnull"`
 	Updated time.Time `json:"updated" db:"updated,notnull"`
@@ -60,6 +60,9 @@ type Comment struct {
 
 // PreInsert update fields Created and Updated.
 func (c *Comment) PreInsert(s gorp.SqlExecutor) error {
+	if c.Name == "" {
+		c.Name = "名無し"
+	}
 	c.Created = time.Now()
 	c.Updated = c.Created
 	return nil
