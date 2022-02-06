@@ -68,7 +68,7 @@ func (c *Comment) PreInsert(s gorp.SqlExecutor) error {
 	return nil
 }
 
-// PreInsert update field Updated.
+// PreUpdate update field Updated.
 func (c *Comment) PreUpdate(s gorp.SqlExecutor) error {
 	c.Updated = time.Now()
 	return nil
@@ -133,7 +133,7 @@ type Controller struct {
 	dbmap *gorp.DbMap
 }
 
-// InsertComment is GET handler to return record.
+// GetComment is GET handler to return record.
 func (controller *Controller) GetComment(c echo.Context) error {
 	var comment Comment
 	// fetch record specified by parameter id
@@ -149,7 +149,7 @@ func (controller *Controller) GetComment(c echo.Context) error {
 	return c.JSON(http.StatusOK, comment)
 }
 
-// InsertComment is GET handler to return records.
+// ListComments is GET handler to return records.
 func (controller *Controller) ListComments(c echo.Context) error {
 	var comments []Comment
 	// fetch last 10 records
